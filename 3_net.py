@@ -1,9 +1,8 @@
+import matplotlib.pyplot as plt
 import theano
 from theano import tensor as T
 import numpy as np
 from load import mnist
-from foxhound.utils.vis import grayscale_grid_vis, unit_scale
-from scipy.misc import imsave
 
 def floatX(X):
     return np.asarray(X, dtype=theano.config.floatX)
@@ -41,8 +40,29 @@ updates = sgd(cost, params)
 train = theano.function(inputs=[X, Y], outputs=cost, updates=updates, allow_input_downcast=True)
 predict = theano.function(inputs=[X], outputs=y_x, allow_input_downcast=True)
 
-for i in range(100):
+for i in range(1):
     for start, end in zip(range(0, len(trX), 128), range(128, len(trX), 128)):
         cost = train(trX[start:end], trY[start:end])
     print np.mean(np.argmax(teY, axis=1) == predict(teX))
 
+height = 1
+width = 10
+plt.figure(figsize=(height, width))
+for i in range(width*height):
+    sub = plt.subplot(height, width, i)
+
+    t = (w_o.get_value()[:, i].reshape((625, 1)) * np.transpose(w_h.get_value())).sum(axis=0)
+    sub.axis("off")
+    sub.imshow(t.reshape((28, 28)), cmap=plt.cm.gray, interpolation="nearest")
+plt.show()
+
+
+# height = 10
+# width = 10
+# plt.figure(figsize=(width, height))
+# for i in range(width*height):
+#     sub = plt.subplot(width, height, i)
+#     t = w_h.get_value()[:, i].reshape((28, 28))
+#     sub.axis("off")
+#     sub.imshow(t, cmap=plt.cm.gray, interpolation="nearest")
+# plt.show()
