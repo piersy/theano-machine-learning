@@ -95,9 +95,9 @@ updates = RMSprop(cost, params, lr=0.001)
 train = theano.function(inputs=[X, Y], outputs=cost, updates=updates, allow_input_downcast=True)
 predict = theano.function(inputs=[X], outputs=y_x, allow_input_downcast=True)
 
-for i in range(10):
+for i in range(1):
     for start, end in zip(range(0, len(trX), 128), range(128, len(trX), 128)):
-        # for start, end in zip(range(0, len(trX) / 20, 128), range(128, len(trX) / 20, 128)):
+    # for start, end in zip(range(0, len(trX) / 20, 128), range(128, len(trX) / 20, 128)):
         cost = train(trX[start:end], trY[start:end])
     print np.mean(np.argmax(teY, axis=1) == predict(teX))
 
@@ -112,15 +112,20 @@ for i in range(10):
 # second layer display the the sum of all images from the first layer after
 # rectification each multiplied by the input weight of the second layer
 
-intermediate = teX[0, :].reshape((1, 784)).transpose() * w_h.get_value()
+inputDigit = teX[0, :].reshape((1, 784))
+
+layer1weights = w_h.get_value()
+intermediate = inputDigit.transpose() * layer1weights
 intermediate_activations = np.sum(intermediate, axis=0)
 # sort ith highest scoring columns first
 intermediate = normalize(intermediate[:, intermediate_activations.argsort()[::-1]])
-w_h_value = normalize(w_h.get_value()[:, intermediate_activations.argsort()[::-1]])
+w_h_value = normalize(layer1weights[:, intermediate_activations.argsort()[::-1]])
 
 print "w_h_value max: ", np.max(intermediate)
 print "w_h_value min: ", np.min(intermediate)
 
+def rectify(x):
+    return x if x > 0 else 0
 
 def add_to_plot(plot, matrix, amount_to_plot, plot_offset):
     for pos in range(amount_to_plot):
@@ -128,6 +133,36 @@ def add_to_plot(plot, matrix, amount_to_plot, plot_offset):
         sub = plot.subplot(height, width, pos + plot_offset + 1)
         sub.axis("off")
         sub.imshow(matrix[:, pos].reshape((28, 28)), cmap=plt.cm.gray, interpolation="none", vmin=0, vmax=1)
+
+
+rectify = np.vectorize(rectify)
+
+layer2weights = w_h2.get_value()
+
+layer2input = rectify(np.sum(inputDigit.transpose() * layer1weights, 0))
+
+secondLayerActivations = np.sum(layer2input.transpose() * layer2weights, 0)
+
+sorted2ndlayerweights = layer2weights[:, secondLayerActivations.argsort()[::-1]]
+
+# take first column of weights and turn into image we don't take into account the rectification here
+secondlayerimage = np.sum(sorted2ndlayerweights[:, 0].transpose() * layer1weights, 1).reshape((28, 28))
+
+
+plt.imshow(normalize(secondlayerimage), cmap=plt.cm.gray, interpolation="none", vmin=0, vmax=1)
+plt.show()
+
+height = 8
+width = 5
+plot_amount = 10
+plt.figure(figsize=(height, width))
+add_to_plot(plt, w_h_value, plot_amount, plot_amount * 0)
+add_to_plot(plt, intermediate, plot_amount, plot_amount * 1)
+add_to_plot(plt, w_h_value[:, ::-1], plot_amount, plot_amount * 2)
+add_to_plot(plt, intermediate[:, ::-1], plot_amount, plot_amount * 3)
+plt.show()
+
+
 
 height = 8
 width = 5

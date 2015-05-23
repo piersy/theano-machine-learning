@@ -34,6 +34,29 @@ print "sum axis 1 ", np.sum(ones, 1)
 # creating arrays
 print np.arange(1, 11)
 
-#iterating over vaules from arrays
+# iterating over vaules from arrays
 for pos in np.nditer(np.arange(10)):
     print pos
+
+# Multidimensional matrix multiplications
+a = np.array([1, 2, 3])
+a = np.vstack((a, a*2, a*3))
+print a
+b = np.ones((3, 3)) * 2
+
+# well this is the einsum we are
+# multiplying each column of a by b to create a new matrix and stacking them in a new dimension
+print "einsum"
+print np.einsum('ij,jk->ijk', a, b)
+
+
+# print a.shape
+# print a[np.newaxis].shape
+# print a[np.newaxis, :].shape
+
+
+
+# not too shure whats happenin here
+# print a[np.newaxis, :, :] * b
+# print a.T[:, np.newaxis] * b.T
+# # a, b[:, :, np.newaxis]
