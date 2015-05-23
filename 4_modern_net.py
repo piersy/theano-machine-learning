@@ -96,8 +96,8 @@ train = theano.function(inputs=[X, Y], outputs=cost, updates=updates, allow_inpu
 predict = theano.function(inputs=[X], outputs=y_x, allow_input_downcast=True)
 
 for i in range(1):
-    for start, end in zip(range(0, len(trX), 128), range(128, len(trX), 128)):
-    # for start, end in zip(range(0, len(trX) / 20, 128), range(128, len(trX) / 20, 128)):
+    # for start, end in zip(range(0, len(trX), 128), range(128, len(trX), 128)):
+    for start, end in zip(range(0, len(trX) / 20, 128), range(128, len(trX) / 20, 128)):
         cost = train(trX[start:end], trY[start:end])
     print np.mean(np.argmax(teY, axis=1) == predict(teX))
 
@@ -129,7 +129,6 @@ def rectify(x):
 
 def add_to_plot(plot, matrix, amount_to_plot, plot_offset):
     for pos in range(amount_to_plot):
-        print pos
         sub = plot.subplot(height, width, pos + plot_offset + 1)
         sub.axis("off")
         sub.imshow(matrix[:, pos].reshape((28, 28)), cmap=plt.cm.gray, interpolation="none", vmin=0, vmax=1)
@@ -146,6 +145,11 @@ secondLayerActivations = np.sum(layer2input.transpose() * layer2weights, 0)
 sorted2ndlayerweights = layer2weights[:, secondLayerActivations.argsort()[::-1]]
 
 # take first column of weights and turn into image we don't take into account the rectification here
+print "sorted2ndlayerweights", sorted2ndlayerweights.shape
+print "layer1weights", layer1weights.shape
+print  "sorted2ndlayerweights[:, 0]", sorted2ndlayerweights[:, 0].shape
+secondLayerImages = np.sum(np.einsum('ij,ki->jik', sorted2ndlayerweights, layer1weights), 2)
+print secondLayerImages.shape
 secondlayerimage = np.sum(sorted2ndlayerweights[:, 0].transpose() * layer1weights, 1).reshape((28, 28))
 
 
