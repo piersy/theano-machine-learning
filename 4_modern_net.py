@@ -7,7 +7,6 @@ from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
 from load import mnist
 
-
 srng = RandomStreams()
 
 
@@ -96,8 +95,8 @@ train = theano.function(inputs=[X, Y], outputs=cost, updates=updates, allow_inpu
 predict = theano.function(inputs=[X], outputs=y_x, allow_input_downcast=True)
 
 for i in range(1):
-    # for start, end in zip(range(0, len(trX), 128), range(128, len(trX), 128)):
-    for start, end in zip(range(0, len(trX) / 20, 128), range(128, len(trX) / 20, 128)):
+    for start, end in zip(range(0, len(trX), 128), range(128, len(trX), 128)):
+    # for start, end in zip(range(0, len(trX) / 20, 128), range(128, len(trX) / 20, 128)):
         cost = train(trX[start:end], trY[start:end])
     print np.mean(np.argmax(teY, axis=1) == predict(teX))
 
@@ -112,17 +111,6 @@ for i in range(1):
 # second layer display the the sum of all images from the first layer after
 # rectification each multiplied by the input weight of the second layer
 
-inputDigit = teX[0, :].reshape((1, 784))
-
-layer1weights = w_h.get_value()
-intermediate = inputDigit.transpose() * layer1weights
-intermediate_activations = np.sum(intermediate, axis=0)
-# sort ith highest scoring columns first
-intermediate = normalize(intermediate[:, intermediate_activations.argsort()[::-1]])
-w_h_value = normalize(layer1weights[:, intermediate_activations.argsort()[::-1]])
-
-print "w_h_value max: ", np.max(intermediate)
-print "w_h_value min: ", np.min(intermediate)
 
 def rectify(x):
     return x if x > 0 else 0
@@ -133,47 +121,71 @@ def add_to_plot(plot, matrix, amount_to_plot, plot_offset):
         sub.axis("off")
         sub.imshow(matrix[:, pos].reshape((28, 28)), cmap=plt.cm.gray, interpolation="none", vmin=0, vmax=1)
 
-
 rectify = np.vectorize(rectify)
+
+inputDigit = teX[0, :].reshape((1, 784))
+
+layer1weights = w_h.get_value()
+layer1 = inputDigit.transpose() * layer1weights
+layer1_output = np.sum(layer1, axis=0, keepdims=True)
+print "layer1_activations.shape", layer1_output.shape
+# sort ith highest scoring columns first
+layer1 = layer1[:, layer1_output.squeeze().argsort()[::-1]]
 
 layer2weights = w_h2.get_value()
 
-layer2input = rectify(np.sum(inputDigit.transpose() * layer1weights, 0))
+layer2output = np.sum(layer1_output.transpose() * layer2weights, 0, keepdims=True)
+# Sort the columns of layer 2 weights largest first
+print "layer2output.shape", layer2output.shape
 
-secondLayerActivations = np.sum(layer2input.transpose() * layer2weights, 0)
+# leave for later
+# layer1weights_rectified = layer1weights[:, layer2input == 0]
 
-sorted2ndlayerweights = layer2weights[:, secondLayerActivations.argsort()[::-1]]
+l2imagecount = 10
 
-# take first column of weights and turn into image we don't take into account the rectification here
-print "sorted2ndlayerweights", sorted2ndlayerweights.shape
-print "layer1weights", layer1weights.shape
-print  "sorted2ndlayerweights[:, 0]", sorted2ndlayerweights[:, 0].shape
-secondLayerImages = np.sum(np.einsum('ij,ki->jik', sorted2ndlayerweights, layer1weights), 2)
-print secondLayerImages.shape
-secondlayerimage = np.sum(sorted2ndlayerweights[:, 0].transpose() * layer1weights, 1).reshape((28, 28))
+l2posimages = np.empty((784, l2imagecount))
+l2negimages = np.empty((784, l2imagecount))
+w_h2
+# for some reason an extra dimension is added if we use argsort with dimensions so we make
+# layer2 output dimensionless by using a selector
+sortedl2Weights = layer2weights[:, layer2output[0, :].argsort()[::-1]]
+print "shapel2s", sortedl2Weights.shape
+for x in range(l2imagecount):
+    # Sum across rows to create 1 image
+    print "shape", sortedl2Weights[:, x].shape
+    l2posimages[:, x] = np.sum(sortedl2Weights[:, x] * layer1weights, 1)
 
-
-plt.imshow(normalize(secondlayerimage), cmap=plt.cm.gray, interpolation="none", vmin=0, vmax=1)
-plt.show()
-
-height = 8
-width = 5
-plot_amount = 10
-plt.figure(figsize=(height, width))
-add_to_plot(plt, w_h_value, plot_amount, plot_amount * 0)
-add_to_plot(plt, intermediate, plot_amount, plot_amount * 1)
-add_to_plot(plt, w_h_value[:, ::-1], plot_amount, plot_amount * 2)
-add_to_plot(plt, intermediate[:, ::-1], plot_amount, plot_amount * 3)
-plt.show()
-
-
+sortedl2Weights = layer2weights[:, layer2output[0, :].argsort()]
+for x in range(l2imagecount):
+    # Sum across rows to create 1 image
+    l2negimages[:, x] = np.sum(sortedl2Weights[:, x] * layer1weights, 1)
 
 height = 8
 width = 5
 plot_amount = 10
 plt.figure(figsize=(height, width))
-add_to_plot(plt, w_h_value, plot_amount, plot_amount * 0)
-add_to_plot(plt, intermediate, plot_amount, plot_amount * 1)
-add_to_plot(plt, w_h_value[:, ::-1], plot_amount, plot_amount * 2)
-add_to_plot(plt, intermediate[:, ::-1], plot_amount, plot_amount * 3)
+add_to_plot(plt, normalize(l2posimages), plot_amount, plot_amount * 0)
+add_to_plot(plt, normalize(inputDigit.transpose() * l2posimages), plot_amount, plot_amount * 1)
+add_to_plot(plt, normalize(l2negimages), plot_amount, plot_amount * 2)
+add_to_plot(plt, normalize(inputDigit.transpose() * l2negimages), plot_amount, plot_amount * 3)
+plt.show()
+
+# height = 4
+# width = 5
+# plot_amount = 10
+# plt.figure(figsize=(height, width))
+# add_to_plot(plt, normalize(secondLayerImages).T, plot_amount, plot_amount*0)
+# add_to_plot(plt, normalize(inputDigit.T * secondLayerImages.T), plot_amount, plot_amount*1)
+# plt.show()
+
+layer1weights = layer1weights[:, layer1_output.squeeze().argsort()[::-1]]
+
+height = 8
+width = 5
+plot_amount = 10
+plt.figure(figsize=(height, width))
+add_to_plot(plt, normalize(layer1weights), plot_amount, plot_amount * 0)
+add_to_plot(plt, normalize(layer1), plot_amount, plot_amount * 1)
+add_to_plot(plt, normalize(layer1weights[:, ::-1]), plot_amount, plot_amount * 2)
+add_to_plot(plt, normalize(layer1[:, ::-1]), plot_amount, plot_amount * 3)
 plt.show()

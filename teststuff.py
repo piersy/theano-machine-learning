@@ -7,7 +7,7 @@ print "unsorted"
 print a
 print "Sort column: ", a[:, 0]
 print "sorted"
-print a[a[:, 0].argsort()]
+print a[:, a[:, 0].argsort()]
 print np.sum(a)
 
 # appending  a column on to a matrix
@@ -40,7 +40,7 @@ for pos in np.nditer(np.arange(10)):
 
 # Multidimensional matrix multiplications
 a = np.array([1, 2])
-a = np.vstack((a, a*2, a*3))
+a = np.vstack((a, a * 2, a * 3))
 print a
 b = np.ones((3, 3)) * 2
 
@@ -60,3 +60,10 @@ print np.einsum('ij,ik->jki', a, b)
 # print a[np.newaxis, :, :] * b
 # print a.T[:, np.newaxis] * b.T
 # # a, b[:, :, np.newaxis]
+
+
+a = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]])
+
+print a
+
+print a * [1, 2, 3]
