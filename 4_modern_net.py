@@ -96,7 +96,7 @@ predict = theano.function(inputs=[X], outputs=y_x, allow_input_downcast=True)
 
 for i in range(1):
     for start, end in zip(range(0, len(trX), 128), range(128, len(trX), 128)):
-    # for start, end in zip(range(0, len(trX) / 20, 128), range(128, len(trX) / 20, 128)):
+        # for start, end in zip(range(0, len(trX) / 20, 128), range(128, len(trX) / 20, 128)):
         cost = train(trX[start:end], trY[start:end])
     print np.mean(np.argmax(teY, axis=1) == predict(teX))
 
@@ -115,11 +115,18 @@ for i in range(1):
 def rectify(x):
     return x if x > 0 else 0
 
+
 def add_to_plot(plot, matrix, amount_to_plot, plot_offset):
     for pos in range(amount_to_plot):
         sub = plot.subplot(height, width, pos + plot_offset + 1)
         sub.axis("off")
         sub.imshow(matrix[:, pos].reshape((28, 28)), cmap=plt.cm.gray, interpolation="none", vmin=0, vmax=1)
+
+
+def get_sorted_weights(layer_input, weights):
+    layer_output = np.sum(layer_input.transpose() * weights, 0)
+    return weights[:, layer_output.argsort()[::-1]]
+
 
 rectify = np.vectorize(rectify)
 
@@ -134,9 +141,7 @@ layer1 = layer1[:, layer1_output.squeeze().argsort()[::-1]]
 
 layer2weights = w_h2.get_value()
 
-layer2output = np.sum(layer1_output.transpose() * layer2weights, 0, keepdims=True)
-# Sort the columns of layer 2 weights largest first
-print "layer2output.shape", layer2output.shape
+sortedl2Weights = get_sorted_weights(layer1_output, layer2weights)
 
 # leave for later
 # layer1weights_rectified = layer1weights[:, layer2input == 0]
@@ -147,18 +152,14 @@ l2posimages = np.empty((784, l2imagecount))
 l2negimages = np.empty((784, l2imagecount))
 w_h2
 # for some reason an extra dimension is added if we use argsort with dimensions so we make
-# layer2 output dimensionless by using a selector
-sortedl2Weights = layer2weights[:, layer2output[0, :].argsort()[::-1]]
-print "shapel2s", sortedl2Weights.shape
+# layer2 output dimensionless by squeezing it
 for x in range(l2imagecount):
     # Sum across rows to create 1 image
-    print "shape", sortedl2Weights[:, x].shape
     l2posimages[:, x] = np.sum(sortedl2Weights[:, x] * layer1weights, 1)
 
-sortedl2Weights = layer2weights[:, layer2output[0, :].argsort()]
 for x in range(l2imagecount):
     # Sum across rows to create 1 image
-    l2negimages[:, x] = np.sum(sortedl2Weights[:, x] * layer1weights, 1)
+    l2negimages[:, x] = np.sum(sortedl2Weights[:, -(x+1)] * layer1weights, 1)
 
 height = 8
 width = 5
