@@ -141,7 +141,7 @@ def add_to_plot(plot, matrix, amount_to_plot, plot_offset):
 inputDigit = teX[0, :].reshape((1, 784))
 layer1weights = w_h.get_value()
 layer2weights = w_h2.get_value()
-
+layer3weights = w_o.get_value()
 
 # Sort layer1 weights based on the input digit
 l1features = calculate_features_forlayer([layer1weights])
@@ -150,11 +150,15 @@ l1features = l1features[:, np.sum(inputDigit.transpose() * l1features, 0).argsor
 l2features = calculate_features_forlayer([layer2weights, layer1weights])
 l2features = l2features[:, np.sum(inputDigit.transpose() * l2features, 0).argsort()[::-1]]
 
+# Sort layer2 images based on the input digit
+l3features = calculate_features_forlayer([layer3weights, layer2weights, layer1weights])
+
 #normalize before mixing with input digit
 normalize(l1features)
 normalize(l2features)
+normalize(l3features)
 
-height = 8
+height = 10
 width = 10
 plot_amount = 10
 plt.figure(figsize=(height, width))
@@ -167,6 +171,8 @@ add_to_plot(plt, l2features[:, 0:10], plot_amount, plot_amount * 4)
 add_to_plot(plt, inputDigit.transpose() * l2features[:, 0:10], plot_amount, plot_amount * 5)
 add_to_plot(plt, l2features[:, -1:-11:-1], plot_amount, plot_amount * 6)
 add_to_plot(plt, inputDigit.transpose() * l2features[:, -1:-11:-1], plot_amount, plot_amount * 7)
+add_to_plot(plt, l3features, plot_amount, plot_amount * 8)
+add_to_plot(plt, inputDigit.transpose() * l3features, plot_amount, plot_amount * 9)
 
 plt.show()
 
