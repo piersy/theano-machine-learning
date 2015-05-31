@@ -149,26 +149,63 @@ sortedl2Weights = get_sorted_weights(layer1_output, layer2weights)
 l2imagecount = 10
 
 l2posimages = np.empty((784, l2imagecount))
+l2posimagesnew = np.empty((784, l2imagecount))
 l2negimages = np.empty((784, l2imagecount))
-w_h2
+l2negimagesnew = np.empty((784, l2imagecount))
+
+l2Images = np.empty_like(layer1weights)
+
+
+def calculate_next_block(a, b):
+    next_block = np.empty((b.shape[0], a.shape[1]))
+    for x in range(a.shape[1]):
+        next_block[:, x] = np.sum(a[:, x] * b, 1)
+    return next_block
+
+
+def calculate_images_atlayer(layers):
+    next_block = layers[0];
+    for x in range(1, len(layers)):
+        next_block = calculate_next_block(next_block, layers[x])
+
+    return next_block
+
+
+l2Images = calculate_images_atlayer([layer2weights, layer1weights])
+print l2Images.shape
+
+# for x in range(layer2weights.shape[1]):
+# l2Images[:, x] = np.sum(layer2weights[:, x] * layer1weights, 1)
+
+# layer2_output = np.sum(layer1_output.transpose() * layer2weights, 0)
+
+# sorted l2 images is now correct i needed to add the input digit into the mix for sorting
+
+sortedl2Images = l2Images[:, np.sum(inputDigit.transpose() * l2Images, 0).argsort()[::-1]]
+# sortedl2Images = l2Images[:, layer2_output.argsort()[::-1]]
+
 # for some reason an extra dimension is added if we use argsort with dimensions so we make
 # layer2 output dimensionless by squeezing it
 for x in range(l2imagecount):
-    # Sum across rows to create 1 image
+    # Sum columns to create images
     l2posimages[:, x] = np.sum(sortedl2Weights[:, x] * layer1weights, 1)
+    l2posimagesnew[:, x] = sortedl2Images[:, x]
 
 for x in range(l2imagecount):
     # Sum across rows to create 1 image
-    l2negimages[:, x] = np.sum(sortedl2Weights[:, -(x+1)] * layer1weights, 1)
+    l2negimages[:, x] = np.sum(sortedl2Weights[:, -(x + 1)] * layer1weights, 1)
+    l2negimagesnew[:, x] = sortedl2Images[:, -(x + 1)]
 
 height = 8
 width = 5
 plot_amount = 10
 plt.figure(figsize=(height, width))
 add_to_plot(plt, normalize(l2posimages), plot_amount, plot_amount * 0)
-add_to_plot(plt, normalize(inputDigit.transpose() * l2posimages), plot_amount, plot_amount * 1)
+# add_to_plot(plt, normalize(inputDigit.transpose() * l2posimages), plot_amount, plot_amount * 1)
+add_to_plot(plt, normalize(l2posimagesnew), plot_amount, plot_amount * 1)
 add_to_plot(plt, normalize(l2negimages), plot_amount, plot_amount * 2)
-add_to_plot(plt, normalize(inputDigit.transpose() * l2negimages), plot_amount, plot_amount * 3)
+# add_to_plot(plt, normalize(inputDigit.transpose() * l2negimages), plot_amount, plot_amount * 3)
+add_to_plot(plt, normalize(l2negimagesnew), plot_amount, plot_amount * 3)
 plt.show()
 
 # height = 4
