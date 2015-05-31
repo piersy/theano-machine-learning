@@ -115,46 +115,7 @@ for i in range(1):
 def rectify(x):
     return x if x > 0 else 0
 
-
-def add_to_plot(plot, matrix, amount_to_plot, plot_offset):
-    for pos in range(amount_to_plot):
-        sub = plot.subplot(height, width, pos + plot_offset + 1)
-        sub.axis("off")
-        sub.imshow(matrix[:, pos].reshape((28, 28)), cmap=plt.cm.gray, interpolation="none", vmin=0, vmax=1)
-
-
-def get_sorted_weights(layer_input, weights):
-    layer_output = np.sum(layer_input.transpose() * weights, 0)
-    return weights[:, layer_output.argsort()[::-1]]
-
-
 rectify = np.vectorize(rectify)
-
-inputDigit = teX[0, :].reshape((1, 784))
-
-layer1weights = w_h.get_value()
-layer1 = inputDigit.transpose() * layer1weights
-layer1_output = np.sum(layer1, axis=0, keepdims=True)
-print "layer1_activations.shape", layer1_output.shape
-# sort ith highest scoring columns first
-layer1 = layer1[:, layer1_output.squeeze().argsort()[::-1]]
-
-layer2weights = w_h2.get_value()
-
-sortedl2Weights = get_sorted_weights(layer1_output, layer2weights)
-
-# leave for later
-# layer1weights_rectified = layer1weights[:, layer2input == 0]
-
-l2imagecount = 10
-
-l2posimages = np.empty((784, l2imagecount))
-l2posimagesnew = np.empty((784, l2imagecount))
-l2negimages = np.empty((784, l2imagecount))
-l2negimagesnew = np.empty((784, l2imagecount))
-
-l2Images = np.empty_like(layer1weights)
-
 
 def calculate_next_block(a, b):
     next_block = np.empty((b.shape[0], a.shape[1]))
@@ -163,58 +124,48 @@ def calculate_next_block(a, b):
     return next_block
 
 
-def calculate_images_atlayer(layers):
+def calculate_features_forlayer(layers):
     next_block = layers[0];
     for x in range(1, len(layers)):
         next_block = calculate_next_block(next_block, layers[x])
 
     return next_block
 
+def add_to_plot(plot, matrix, amount_to_plot, plot_offset):
+    for pos in range(amount_to_plot):
+        sub = plot.subplot(height, width, pos + plot_offset + 1)
+        sub.axis("off")
+        sub.imshow(matrix[:, pos].reshape((28, 28)), cmap=plt.cm.gray, interpolation="none", vmin=0, vmax=1)
 
-l2Images = calculate_images_atlayer([layer2weights, layer1weights])
-print l2Images.shape
+inputDigit = teX[0, :].reshape((1, 784))
+layer1weights = w_h.get_value()
+layer2weights = w_h2.get_value()
 
-# for x in range(layer2weights.shape[1]):
-# l2Images[:, x] = np.sum(layer2weights[:, x] * layer1weights, 1)
-
-# layer2_output = np.sum(layer1_output.transpose() * layer2weights, 0)
-
-# sorted l2 images is now correct i needed to add the input digit into the mix for sorting
-
-sortedl2Images = l2Images[:, np.sum(inputDigit.transpose() * l2Images, 0).argsort()[::-1]]
+# Sort layer2 images based on the input digit
+l2features = calculate_features_forlayer([layer2weights, layer1weights])
+l2features = l2features[:, np.sum(inputDigit.transpose() * l2features, 0).argsort()[::-1]]
 
 height = 8
 width = 5
 plot_amount = 10
 plt.figure(figsize=(height, width))
-pos = sortedl2Images[:, 0:10]
-add_to_plot(plt, normalize(pos), plot_amount, plot_amount * 0)
-add_to_plot(plt, normalize(inputDigit.transpose() * pos), plot_amount, plot_amount * 1)
-# add_to_plot(plt, normalize(sortedl2Images[:, 0:10]), plot_amount, plot_amount * 1)
+add_to_plot(plt, normalize(l2features[:, 0:10]), plot_amount, plot_amount * 0)
+add_to_plot(plt, normalize(inputDigit.transpose() * l2features[:, 0:10]), plot_amount, plot_amount * 1)
 
-
-neg = sortedl2Images[:, -1:-11:-1]
-add_to_plot(plt, normalize(neg), plot_amount, plot_amount * 2)
-add_to_plot(plt, normalize(inputDigit.transpose() * neg), plot_amount, plot_amount * 3)
-# add_to_plot(plt, normalize(sortedl2Images[:, -1:-11:-1]), plot_amount, plot_amount * 3)
+add_to_plot(plt, normalize(l2features[:, -1:-11:-1]), plot_amount, plot_amount * 2)
+add_to_plot(plt, normalize(inputDigit.transpose() * l2features[:, -1:-11:-1]), plot_amount, plot_amount * 3)
 plt.show()
 
-# height = 4
-# width = 5
-# plot_amount = 10
-# plt.figure(figsize=(height, width))
-# add_to_plot(plt, normalize(secondLayerImages).T, plot_amount, plot_amount*0)
-# add_to_plot(plt, normalize(inputDigit.T * secondLayerImages.T), plot_amount, plot_amount*1)
-# plt.show()
-
-layer1weights = layer1weights[:, layer1_output.squeeze().argsort()[::-1]]
+# Sort layer1 weights based on the input digit
+l1features = calculate_features_forlayer([layer1weights])
+l1features = l1features[:, np.sum(inputDigit.transpose() * l1features, 0).argsort()[::-1]]
 
 height = 8
 width = 5
 plot_amount = 10
 plt.figure(figsize=(height, width))
-add_to_plot(plt, normalize(layer1weights), plot_amount, plot_amount * 0)
-add_to_plot(plt, normalize(layer1), plot_amount, plot_amount * 1)
-add_to_plot(plt, normalize(layer1weights[:, ::-1]), plot_amount, plot_amount * 2)
-add_to_plot(plt, normalize(layer1[:, ::-1]), plot_amount, plot_amount * 3)
+add_to_plot(plt, normalize(l1features), plot_amount, plot_amount * 0)
+add_to_plot(plt, normalize(inputDigit.transpose() * l1features), plot_amount, plot_amount * 1)
+add_to_plot(plt, normalize(l1features[:, ::-1]), plot_amount, plot_amount * 2)
+add_to_plot(plt, normalize(inputDigit.transpose() * l1features[:, ::-1]), plot_amount, plot_amount * 3)
 plt.show()
