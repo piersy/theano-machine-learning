@@ -182,30 +182,21 @@ print l2Images.shape
 # sorted l2 images is now correct i needed to add the input digit into the mix for sorting
 
 sortedl2Images = l2Images[:, np.sum(inputDigit.transpose() * l2Images, 0).argsort()[::-1]]
-# sortedl2Images = l2Images[:, layer2_output.argsort()[::-1]]
-
-# for some reason an extra dimension is added if we use argsort with dimensions so we make
-# layer2 output dimensionless by squeezing it
-for x in range(l2imagecount):
-    # Sum columns to create images
-    l2posimages[:, x] = np.sum(sortedl2Weights[:, x] * layer1weights, 1)
-    l2posimagesnew[:, x] = sortedl2Images[:, x]
-
-for x in range(l2imagecount):
-    # Sum across rows to create 1 image
-    l2negimages[:, x] = np.sum(sortedl2Weights[:, -(x + 1)] * layer1weights, 1)
-    l2negimagesnew[:, x] = sortedl2Images[:, -(x + 1)]
 
 height = 8
 width = 5
 plot_amount = 10
 plt.figure(figsize=(height, width))
-add_to_plot(plt, normalize(l2posimages), plot_amount, plot_amount * 0)
-# add_to_plot(plt, normalize(inputDigit.transpose() * l2posimages), plot_amount, plot_amount * 1)
-add_to_plot(plt, normalize(l2posimagesnew), plot_amount, plot_amount * 1)
-add_to_plot(plt, normalize(l2negimages), plot_amount, plot_amount * 2)
-# add_to_plot(plt, normalize(inputDigit.transpose() * l2negimages), plot_amount, plot_amount * 3)
-add_to_plot(plt, normalize(l2negimagesnew), plot_amount, plot_amount * 3)
+pos = sortedl2Images[:, 0:10]
+add_to_plot(plt, normalize(pos), plot_amount, plot_amount * 0)
+add_to_plot(plt, normalize(inputDigit.transpose() * pos), plot_amount, plot_amount * 1)
+# add_to_plot(plt, normalize(sortedl2Images[:, 0:10]), plot_amount, plot_amount * 1)
+
+
+neg = sortedl2Images[:, -1:-11:-1]
+add_to_plot(plt, normalize(neg), plot_amount, plot_amount * 2)
+add_to_plot(plt, normalize(inputDigit.transpose() * neg), plot_amount, plot_amount * 3)
+# add_to_plot(plt, normalize(sortedl2Images[:, -1:-11:-1]), plot_amount, plot_amount * 3)
 plt.show()
 
 # height = 4

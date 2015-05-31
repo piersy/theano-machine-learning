@@ -2,7 +2,12 @@ import numpy as np
 
 
 # sorting
-a = np.array([[3, 1, 1], [2, 2, 2], [1, 3, 3]])
+a = np.array([[3, 2, 1],
+              [2, 2, 2],
+              [1, 3, 3]])
+
+print a[:, -1:-4:-1]
+
 print "unsorted"
 print a
 print "Sort column: ", a[:, 0]
