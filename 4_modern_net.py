@@ -137,35 +137,49 @@ def add_to_plot(plot, matrix, amount_to_plot, plot_offset):
         sub.axis("off")
         sub.imshow(matrix[:, pos].reshape((28, 28)), cmap=plt.cm.gray, interpolation="none", vmin=0, vmax=1)
 
+# this input digit is normalized so cannot be mixed with other stuff till it has been normalized
 inputDigit = teX[0, :].reshape((1, 784))
 layer1weights = w_h.get_value()
 layer2weights = w_h2.get_value()
 
-# Sort layer2 images based on the input digit
-l2features = calculate_features_forlayer([layer2weights, layer1weights])
-l2features = l2features[:, np.sum(inputDigit.transpose() * l2features, 0).argsort()[::-1]]
-
-height = 8
-width = 5
-plot_amount = 10
-plt.figure(figsize=(height, width))
-add_to_plot(plt, normalize(l2features[:, 0:10]), plot_amount, plot_amount * 0)
-add_to_plot(plt, normalize(inputDigit.transpose() * l2features[:, 0:10]), plot_amount, plot_amount * 1)
-
-add_to_plot(plt, normalize(l2features[:, -1:-11:-1]), plot_amount, plot_amount * 2)
-add_to_plot(plt, normalize(inputDigit.transpose() * l2features[:, -1:-11:-1]), plot_amount, plot_amount * 3)
-plt.show()
 
 # Sort layer1 weights based on the input digit
 l1features = calculate_features_forlayer([layer1weights])
 l1features = l1features[:, np.sum(inputDigit.transpose() * l1features, 0).argsort()[::-1]]
+# Sort layer2 images based on the input digit
+l2features = calculate_features_forlayer([layer2weights, layer1weights])
+l2features = l2features[:, np.sum(inputDigit.transpose() * l2features, 0).argsort()[::-1]]
+
+#normalize before mixing with input digit
+normalize(l1features)
+normalize(l2features)
 
 height = 8
-width = 5
+width = 10
 plot_amount = 10
 plt.figure(figsize=(height, width))
-add_to_plot(plt, normalize(l1features), plot_amount, plot_amount * 0)
-add_to_plot(plt, normalize(inputDigit.transpose() * l1features), plot_amount, plot_amount * 1)
-add_to_plot(plt, normalize(l1features[:, ::-1]), plot_amount, plot_amount * 2)
-add_to_plot(plt, normalize(inputDigit.transpose() * l1features[:, ::-1]), plot_amount, plot_amount * 3)
+add_to_plot(plt, l1features, plot_amount, plot_amount * 0)
+add_to_plot(plt, inputDigit.transpose() * l1features, plot_amount, plot_amount * 1)
+add_to_plot(plt, l1features[:, ::-1], plot_amount, plot_amount * 2)
+add_to_plot(plt, inputDigit.transpose() * l1features[:, ::-1], plot_amount, plot_amount * 3)
+
+add_to_plot(plt, l2features[:, 0:10], plot_amount, plot_amount * 4)
+add_to_plot(plt, inputDigit.transpose() * l2features[:, 0:10], plot_amount, plot_amount * 5)
+add_to_plot(plt, l2features[:, -1:-11:-1], plot_amount, plot_amount * 6)
+add_to_plot(plt, inputDigit.transpose() * l2features[:, -1:-11:-1], plot_amount, plot_amount * 7)
+
 plt.show()
+
+
+
+# height = 8
+# width = 5
+# plot_amount = 10
+# plt.figure(figsize=(height, width))
+# add_to_plot(plt, normalize(l2features[:, 0:10]), plot_amount, plot_amount * 0)
+# add_to_plot(plt, normalize(inputDigit.transpose() * l2features[:, 0:10]), plot_amount, plot_amount * 1)
+#
+# add_to_plot(plt, normalize(l2features[:, -1:-11:-1]), plot_amount, plot_amount * 2)
+# add_to_plot(plt, normalize(inputDigit.transpose() * l2features[:, -1:-11:-1]), plot_amount, plot_amount * 3)
+# plt.show()
+
